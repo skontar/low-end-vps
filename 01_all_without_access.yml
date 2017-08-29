@@ -1,0 +1,13 @@
+---
+- hosts: all
+
+  gather_facts: False 
+
+- include: 03_basic_setup.yml
+- include: 04_firewall.yml
+- include: 05_postfix.yml
+- include: 06_updates.yml
+- include: 07_nginx.yml
+- include: 08_uwsgi.yml
+- include: 09_test_flask_app.yml
+- include: 10_letsencrypt.yml

@@ -1,0 +1,41 @@
+---
+- hosts: all
+
+  become: yes
+  gather_facts: False 
+
+  tasks: 
+    # - name: Update system
+      # yum: 
+        # name: "*"
+        # state: latest
+
+    - name: Update yum
+      yum: 
+        name: yum
+        state: latest
+
+    - name: Install yum-cron
+      yum: 
+        name: yum-cron
+        state: present
+
+    - name: Enable automatic updates
+      lineinfile: 
+        dest: /etc/yum/yum-cron.conf
+        regexp: "apply_updates = " 
+        line: "apply_updates = yes"
+
+    - name: Start yum-cron
+      service:
+        name: yum-cron
+        state: started
+        enabled: yes
+
+    - name: Start cron
+      service:
+        name: crond
+        state: started
+        enabled: yes
+
+    

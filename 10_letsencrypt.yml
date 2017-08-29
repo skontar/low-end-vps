@@ -1,0 +1,88 @@
+---
+- hosts: all
+
+  become: yes
+  gather_facts: False 
+
+  tasks: 
+    - name: Install certbot-nginx
+      yum: 
+        name: certbot-nginx
+        state: present
+            
+    - name: Run certbot
+      shell: >
+        certbot certonly --nginx --agree-tos --non-interactive 
+        -m {{ target_email }} -d {{ hostname }},test.{{ hostname }}
+      args:
+        creates: /var/log/letsencrypt/letsencrypt.log
+      register: certbot_out
+    - debug:
+        var: certbot_out.stdout_lines
+    - debug: 
+        var: certbot_out.stderr_lines
+
+    - name: Update Diffie-Hellman parameters
+      shell: >
+        openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+      args:
+        creates: /etc/ssl/certs/dhparam.pem
+
+    - name: Remove old symlink for nginx
+      file:
+        path: /etc/nginx/conf.d/test_nginx.conf
+        state: absent
+      become: true
+      notify: Reload nginx
+        
+    - name: Create new symlink for nginx
+      file:
+        src: /srv/Test/test_nginx_https.conf
+        dest: /etc/nginx/conf.d/test_nginx_https.conf
+        state: link
+      become: true
+      notify: Reload nginx
+
+    - name: Remove old symlink for uwsgi
+      file:
+        path: /etc/uwsgi.d/test_uwsgi.ini
+        state: absent
+      become: true
+        
+    - name: Create new symlink for uwsgi
+      file:
+        src: /srv/Test/test_uwsgi_https.ini
+        dest: /etc/uwsgi.d/test_uwsgi_https.ini
+        state: link
+      become: true
+
+    - name: Handle root with HTTPS
+      copy: 
+        src: "{{ item }}"
+        dest: /etc/nginx/conf.d
+      with_fileglob: files/nginx/root_https.conf
+      notify: Reload nginx
+
+    - name: Update HOSTNAMEs in nginx config files
+      replace:
+        path: "{{ item }}"
+        regexp: 'HOSTNAME'
+        replace: "{{ hostname }}"
+      with_items:
+        - /srv/Test/test_nginx_https.conf
+        - /etc/nginx/conf.d/root_https.conf
+
+    - name: Enable automatic reneval using anacron
+      copy: 
+        src: "{{ item }}"
+        dest: /etc/cron.daily
+        mode: 0755
+      with_fileglob: files/1certbot-daily.cron 
+    
+  handlers:
+    - name: Reload nginx
+      service: 
+        name: nginx 
+        state: reloaded
+
+

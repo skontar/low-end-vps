@@ -1,0 +1,80 @@
+---
+- hosts: all
+   
+  gather_facts: False
+
+  tasks:
+    - name: Use correct SSH user
+      set_fact: 
+        ansible_user: root
+
+    - name: Use correct SSH port
+      set_fact: 
+        ansible_port: 22
+
+    - name: Use correct SSH password
+      set_fact: 
+        ansible_ssh_pass: "{{ original_root_password }}"
+  
+    - name: Create user
+      user: 
+        name: "{{ new_user }}"
+        shell: /bin/bash 
+        password: "{{ ansible_become_pass | password_hash('sha512') }}"
+      
+    - name: Add authorized keys for user
+      authorized_key: 
+        user: "{{ new_user }}"
+        key: "{{ lookup('file', item) }}"
+      with_items: "{{ public_keys }}"
+
+    - name: Install sudo
+      yum: 
+        name: sudo 
+        state: present 
+
+    - name: Add user to sudoers
+      lineinfile: 
+        dest: /etc/sudoers 
+        regexp: "{{ new_user }} ALL" 
+        # line: "{{ new_user }} ALL=(ALL) ALL"
+        line: "{{ new_user }} ALL=(ALL) NOPASSWD: ALL"
+
+    - name: Change ssh port
+      lineinfile: 
+        dest: /etc/ssh/sshd_config
+        regexp: '^Port\s'
+        line: "Port {{ new_port }}"
+
+    - name: Disallow password authentication
+      lineinfile: 
+        dest: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+      
+    - name: Disallow root SSH access
+      lineinfile: 
+        dest: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin no"
+          
+    - name: Lock root account
+      command: passwd --lock root
+          
+    - name: Drop iptables rules
+      iptables:
+        flush: yes
+    
+    - name: Restart ssh
+      service: 
+        name: sshd
+        state: restarted
+
+    - name: Use new SSH user
+      set_fact: 
+        ansible_user: "{{ new_user }}"
+
+    - name: Use new SSH port
+      set_fact: 
+        ansible_port: "{{ new_port }}"
+

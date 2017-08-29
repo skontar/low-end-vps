@@ -1,0 +1,36 @@
+---
+- hosts: all
+
+  become: yes
+  gather_facts: False 
+
+  tasks:
+    - name: Install uwsgi
+      yum: 
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - uwsgi
+        - uwsgi-plugin-python3
+
+    - name: Disable tyrant mode
+      lineinfile:
+        dest: /etc/uwsgi.ini
+        regexp: '^\s*emperor-tyrant.*;'
+        line: "emperor-tyrant = false"
+      notify: Restart uwsgi     
+
+    - name: Create directory for socket files
+      file:
+        path: /srv/sockets
+        owner: uwsgi
+        group: nginx
+        mode: 0770
+        state: directory
+
+  handlers:
+    - name: Restart uwsgi
+      service: 
+        name: uwsgi 
+        state: restarted
+        enabled: yes

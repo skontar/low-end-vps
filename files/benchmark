@@ -1,0 +1,157 @@
+#!/bin/bash
+
+# Copyright (c) 2017 Stanislav Kontar
+# License: MIT
+#
+# Inspired by https://freevps.us/downloads/bench.sh
+
+sys_info() { 
+    cname=$( awk -F ":" '/model name/ {
+                 gsub(/^[ ]+/, "", $2); print $2; exit 
+             }' < /proc/cpuinfo )
+    cores=$( nproc )
+    ram=$( free -h | awk '/Mem:/ { print $2 }' )
+    swap=$( free -h | awk '/Swap:/ { print $2 }' )
+    host=$( hostname )
+    kernel=$( uname -r )
+    arch=$( uname -m )
+    os=$( < /etc/redhat-release )
+    ipv4=$( curl -s --connect-timeout 10 --max-time 20 ipv4.icanhazip.com )
+    result="$?"
+    if [[ "$result" == 7 ]]; then
+        ipv4="Connection timeout 10s"
+    elif [[ "$result" == 28 ]]; then
+        ipv4="Download timeout 20s"
+    fi
+    
+    echo "System Information"
+    echo "=================="
+    
+    echo "Procesor    : $cname"
+    echo "Cores       : $cores"
+    echo "RAM         : $ram"
+    echo "Swap        : $swap"
+    echo "OS          : $os"
+    echo "Arch        : $arch"
+    echo "Kernel      : $kernel"
+    echo "Hostname    : $host"
+    echo "Public IPv4 : $ipv4"
+    echo
+}
+
+io_test() {
+    echo "Disk Speed"
+    echo "=========="
+    
+    test_file="/tmp/test_$$"
+  
+    raw1=$( ( dd if=/dev/zero of="$test_file" bs=64k count=16k conv=fdatasync \
+              && rm "$test_file" ) 2>&1 )
+    io1=$( awk -F "," '/copied/ { gsub(/^[ ]+/, "", $NF); print $NF }' <<< "$raw1" )
+    echo "I/O #1 run  : $io1"
+    raw2=$( ( dd if=/dev/zero of="$test_file" bs=64k count=16k conv=fdatasync \
+              && rm "$test_file" ) 2>&1 )
+    io2=$( awk -F "," '/copied/ { gsub(/^[ ]+/, "", $NF); print $NF }' <<< "$raw2" )
+    echo "I/O #2 run  : $io2"
+    raw3=$( ( dd if=/dev/zero of="$test_file" bs=64k count=16k conv=fdatasync \
+              && rm "$test_file" ) 2>&1 )
+    io3=$( awk -F "," '/copied/ { gsub(/^[ ]+/, "", $NF); print $NF }' <<< "$raw3" )
+    echo "I/O #3 run  : $io3"
+    ioavg=$( echo -e "$io1\n$io2\n$io3" | awk '{ s += $1 } END { printf "%.1f", s / 3 }' ) 
+    echo "I/O avarage : $ioavg"
+    echo
+}
+
+download_test() {
+    downloads=(
+        "Atlanta, GA, US           Coloat"
+        "http://speed.atl.coloat.com/100mb.test"
+        
+        "Dallas, TX, US            Softlayer"  
+        "http://speedtest.sea01.softlayer.com/downloads/test100.zip"
+        
+        "Seattle, WA, US           Softlayer"
+        "http://speedtest.sea01.softlayer.com/downloads/test100.zip"
+        
+        "Rotterdam, Netherlands    i3D"
+        "http://mirror.i3d.net/100mb.bin"
+        
+        "Prague, Czech Republic    Superhosting"
+        "http://speedtest.superhosting.cz/test.php?size=100M"
+        
+        "Prague, Czech republic    10gbps"
+        "http://1997754032.rsc.cdn77.org/100mb.bin"
+    )
+       
+    echo "Download Speed"
+    echo "=============="   
+    for (( i = 0; i < ${#downloads[@]}; i += 2 )); do
+        raw_speed=$( curl -4 ${downloads[i + 1]} -w "%{speed_download}" \
+                     --connect-timeout 10 --max-time 300 \
+                     -o /dev/null 2>/dev/null )
+        result="$?"
+        if [[ "$result" == 7 ]]; then
+            speed="Connection timeout 10s"
+        elif [[ "$result" == 28 ]]; then
+            speed="Download timeout 5min"
+        else
+            speed=$( awk '{ printf "%.1fMB/s", $0 / 1024 / 1024 }' <<< "$raw_speed" )
+        fi
+        printf "%-50s%s\n" "${downloads[i]}" "$speed"
+    done
+    echo
+}
+
+upload_test() {
+    uploads=(
+        "Atlanta, GA, US           Hotwire Fision"
+        "http://speedtestatl.gethotwired.com/speedtest/upload.php"
+    
+        "Dallas, TX, US            Speedtest"  
+        "http://dfw.speedtest.net/speedtest/upload.php"
+    
+        "Seattle, WA, US           AT&T"
+        "http://sea.speedtest.sbcglobal.net/speedtest/upload.php"
+    
+        "Bremen, Germany           LWLcom GmbH"
+        "http://speedtest.lwlcom.net/speedtest/upload.php"
+        
+        "Prague, Czech Republic    Vodafone"
+        "http://speedtest.vodafone.cz/speedtest/upload.php"
+        
+        "Prague, Czech Republic    O2"
+        "http://speedtest.o2.cz/upload.php"
+    )
+    
+    echo "Upload Speed"
+    echo "============"   
+
+    test_file="/tmp/100mb.test"
+    dd if=/dev/zero of="$test_file" count=1024 bs=102400 &> /dev/null
+
+    for (( i = 0; i < ${#uploads[@]}; i += 2 )); do  
+        raw_speed=$( curl -4 ${uploads[i + 1]} -F "file=@$test_file" -w "%{speed_upload}" \
+                     --connect-timeout 10 --max-time 300 \
+                     -o /dev/null 2>/dev/null )
+        result="$?"
+        if [[ "$result" == 7 ]]; then
+            speed="Connection timeout 10s"
+        elif [[ "$result" == 28 ]]; then
+            speed="Upload timeout 5min"
+        else
+            speed=$( awk '{ printf "%.1fMB/s", $0 / 1024 / 1024 }' <<< "$raw_speed" )
+        fi
+        printf "%-50s%s\n" "${uploads[i]}" "$speed"
+    done
+    
+    rm "$test_file"
+    echo
+}
+
+
+( 
+  sys_info
+  io_test
+  download_test
+  upload_test 
+) | tee ~/benchmark.log

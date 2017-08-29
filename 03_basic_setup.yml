@@ -1,0 +1,33 @@
+---
+- hosts: all
+
+  become: yes
+  gather_facts: False 
+
+  tasks:
+    - name: Set hostname
+      hostname:
+        name: "{{ hostname }}"
+  
+    - name: Enable EPEL
+      yum: 
+        name: epel-release 
+        state: present 
+  
+    - name: Install packages
+      yum: 
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - mc
+        - less
+        - htop
+        - rsync
+        - python34
+        - python34-pip
+
+    - name: Remove packages
+      yum: 
+        name: "{{ item }}"
+        state: absent
+      with_lines: cat remove_packages.txt

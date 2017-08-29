@@ -1,0 +1,11 @@
+---
+- hosts: all
+
+  gather_facts: False 
+
+  tasks:
+    - name: Run benchmark
+      script: files/benchmark
+      register: benchmark
+    - debug:
+        var: benchmark.stdout_lines
