@@ -25,6 +25,8 @@
         - rsync
         - python34
         - python34-pip
+        - vim-enhanced
+        - tmux
 
     - name: Remove packages
       yum: 
