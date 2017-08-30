@@ -16,9 +16,15 @@
     - name: Disable tyrant mode
       lineinfile:
         dest: /etc/uwsgi.ini
-        regexp: '^\s*emperor-tyrant.*;'
+        regexp: '^\s*emperor-tyrant.*'
         line: "emperor-tyrant = false"
       notify: Restart uwsgi     
+
+    - name: Disable master for emperor
+      lineinfile:
+        dest: /etc/uwsgi.ini
+        line: "master = false"
+      notify: Restart uwsgi 
 
     - name: Create directory for socket files
       file:

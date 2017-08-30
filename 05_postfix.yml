@@ -10,6 +10,13 @@
         name: postfix
         state: present
     
+    - name: Allow receiving emails from everywhere
+      lineinfile: 
+        dest: /etc/postfix/main.cf
+        regex: "^\s*inet_interfaces"
+        line: "inet_interfaces = all"
+      notify: Restart postfix
+    
     - name: Allow only local clients to send emails
       lineinfile: 
         dest: /etc/postfix/main.cf

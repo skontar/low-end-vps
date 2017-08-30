@@ -17,27 +17,20 @@
         name: iptables-services
         state: present
 
+    - name: Firewall rules
+      template:
+        src: templates/iptables.j2
+        dest: "{{ item }}"
+        mode: 0600
+      with_items: 
+        - /etc/sysconfig/iptables
+        - /etc/sysconfig/ip6tables
+
     - name: Firewall - start iptables
       service:
-        name: iptables
-        state: started
+        name: "{{ item }}"
+        state: restarted
         enabled: yes
-
-    - name: Rules
-      iptables_raw:
-        name: basic_rules
-        ipversion: "{{ item }}"
-        keep_unmanaged: no
-        rules: |
-          -A INPUT -i lo -j ACCEPT
-          -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-          -A INPUT -m conntrack --ctstate INVALID -j DROP
-          -A INPUT -p tcp --dport {{ new_port }} -m conntrack --ctstate NEW -j ACCEPT
-          -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j ACCEPT
-          -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
-          -A INPUT -p tcp --dport 25 -m conntrack --ctstate NEW -j ACCEPT
-          -A INPUT -p icmp -j ACCEPT
-          -P INPUT DROP
-          -P FORWARD DROP
-          -P OUTPUT ACCEPT
-      with_items: [4, 6]
+      with_items: 
+        - iptables
+        - ip6tables

@@ -63,7 +63,11 @@
           
     - name: Drop iptables rules
       iptables:
+        ip_version: "{{ item }}"
         flush: yes
+      with_items:
+        - ipv4
+        - ipv6
     
     - name: Restart ssh
       service: 

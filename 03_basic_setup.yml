@@ -30,4 +30,4 @@
       yum: 
         name: "{{ item }}"
         state: absent
-      with_lines: cat remove_packages.txt
+      with_lines: cat packages/remove
