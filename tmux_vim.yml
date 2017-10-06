@@ -1,0 +1,28 @@
+---
+- hosts: all
+
+  gather_facts: False 
+
+  tasks:
+    - name: Copy tmux config
+      copy: 
+        src: "{{ item }}"
+        dest: ~/.tmux.conf
+      with_fileglob: ~/.tmux.conf
+
+    - name: Copy vim config
+      copy: 
+        src: "{{ item }}"
+        dest: ~/.vimrc
+      with_fileglob: ~/.vimrc
+
+    - name: Create colors directory for vim
+      file: 
+        path: ~/.vim/colors
+        state: directory
+
+    - name: Copy vim color scheme
+      copy: 
+        src: "{{ item }}"
+        dest: ~/.vim/colors/jellybeans-black.vim
+      with_fileglob: ~/.vim/colors/jellybeans-black.vim

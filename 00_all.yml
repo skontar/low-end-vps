@@ -3,5 +3,5 @@
 
   gather_facts: False 
 
-- include: 02_access.yml
-- include: 01_all_without_access.yml
+- import_playbook: 02_access.yml
+- import_playbook: 01_all_without_access.yml
