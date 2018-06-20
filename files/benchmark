@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017 Stanislav Kontar
+# Copyright (c) 2018 Stanislav Kontar
 # License: MIT
 #
 # Inspired by https://freevps.us/downloads/bench.sh
@@ -39,26 +39,37 @@ sys_info() {
     echo
 }
 
+cpu_test() {
+	echo "CPU Speed"
+    echo "========="
+    
+    aes_raw=$( openssl speed aes-256-cbc 2> /dev/null )
+    aes=$( awk '/aes-256 cbc/ { printf "%.0f MB/s", $NF / 1024 }' <<< "$aes_raw" )
+    echo "AES-256 CCB : $aes"
+    
+    dsa_raw=$( openssl speed dsa2048 2> /dev/null )
+    dsa=$( awk '/dsa 2048/ { printf "%.0f sign/s | %.0f verify/s", $(NF-1), $NF }' <<< "$dsa_raw" )
+    echo "DSA 2048    : $dsa"
+    
+    sha_raw=$( openssl speed sha256 2> /dev/null )
+    sha=$( awk '/sha256/ { printf "%.0f MB/s", $NF / 1024 }' <<< "$sha_raw" )
+    echo "SHA256      : $sha"
+    
+    echo
+}
+
 io_test() {
     echo "Disk Speed"
     echo "=========="
     
     test_file="/tmp/test_$$"
-  
-    raw1=$( ( dd if=/dev/zero of="$test_file" bs=64k count=16k conv=fdatasync \
+ 
+	for (( i = 1; i < 4; i++ )); do
+		raw=$( ( dd if=/dev/zero of="$test_file" bs=64k count=16k conv=fdatasync \
               && rm "$test_file" ) 2>&1 )
-    io1=$( awk -F "," '/copied/ { gsub(/^[ ]+/, "", $NF); print $NF }' <<< "$raw1" )
-    echo "I/O #1 run  : $io1"
-    raw2=$( ( dd if=/dev/zero of="$test_file" bs=64k count=16k conv=fdatasync \
-              && rm "$test_file" ) 2>&1 )
-    io2=$( awk -F "," '/copied/ { gsub(/^[ ]+/, "", $NF); print $NF }' <<< "$raw2" )
-    echo "I/O #2 run  : $io2"
-    raw3=$( ( dd if=/dev/zero of="$test_file" bs=64k count=16k conv=fdatasync \
-              && rm "$test_file" ) 2>&1 )
-    io3=$( awk -F "," '/copied/ { gsub(/^[ ]+/, "", $NF); print $NF }' <<< "$raw3" )
-    echo "I/O #3 run  : $io3"
-    ioavg=$( echo -e "$io1\n$io2\n$io3" | awk '{ s += $1 } END { printf "%.1f", s / 3 }' ) 
-    echo "I/O avarage : $ioavg"
+		io=$( awk -F "," '/copied/ { gsub(/^[ ]+/, "", $NF); print $NF }' <<< "$raw" )
+		echo "I/O #$i run  : $io"
+    done
     echo
 }
 
@@ -95,7 +106,7 @@ download_test() {
         elif [[ "$result" == 28 ]]; then
             speed="Download timeout 5min"
         else
-            speed=$( awk '{ printf "%.1fMB/s", $0 / 1024 / 1024 }' <<< "$raw_speed" )
+            speed=$( awk '{ printf "%.1f MB/s", $0 / 1024 / 1024 }' <<< "$raw_speed" )
         fi
         printf "%-50s%s\n" "${downloads[i]}" "$speed"
     done
@@ -139,7 +150,7 @@ upload_test() {
         elif [[ "$result" == 28 ]]; then
             speed="Upload timeout 5min"
         else
-            speed=$( awk '{ printf "%.1fMB/s", $0 / 1024 / 1024 }' <<< "$raw_speed" )
+            speed=$( awk '{ printf "%.1f MB/s", $0 / 1024 / 1024 }' <<< "$raw_speed" )
         fi
         printf "%-50s%s\n" "${uploads[i]}" "$speed"
     done
@@ -151,6 +162,7 @@ upload_test() {
 
 ( 
   sys_info
+  cpu_test
   io_test
   download_test
   upload_test 
