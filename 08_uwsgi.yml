@@ -7,11 +7,10 @@
   tasks:
     - name: Install uwsgi
       yum: 
-        name: "{{ item }}"
+        name:
+          - uwsgi
+          - uwsgi-plugin-python36
         state: present
-      with_items:
-        - uwsgi
-        - uwsgi-plugin-python3
 
     - name: Disable tyrant mode
       lineinfile:
@@ -25,6 +24,11 @@
         dest: /etc/uwsgi.ini
         line: "master = false"
       notify: Restart uwsgi 
+
+    - name: Create directory for PID files
+      file:
+        path: /run/uwsgi
+        state: directory
 
     - name: Create directory for socket files
       file:

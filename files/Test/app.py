@@ -81,8 +81,8 @@ def test():
         data += '<br>Filename encoding: ' + sys.getfilesystemencoding()     
 
         try:
-            import pip
-            packages = pip.get_installed_distributions()
+            from pip._internal.utils.misc import get_installed_distributions
+            packages = get_installed_distributions()
             data += '<br><br>PIP packages:<br>' + '<br>'.join(sorted(['{} ({})'.format(a.project_name, a.version) for a in packages], key=str.lower))
         except:
             data += '<br><br>PIP not working'        

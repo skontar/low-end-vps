@@ -16,20 +16,20 @@
   
     - name: Remove packages
       yum: 
-        name: "{{ item }}"
+        name: "{{ query('lines', 'cat packages/{{ reduce }}') }}"
         state: absent
-      with_lines: cat packages/remove
 
     - name: Install packages
       yum: 
-        name: "{{ item }}"
+        name:
+          - mc
+          - less
+          - htop
+          - rsync
+          - python36
+          - vim-enhanced
+          - tmux
         state: present
-      with_items:
-        - mc
-        - less
-        - htop
-        - rsync
-        - python34
-        - python34-pip
-        - vim-enhanced
-        - tmux
+
+    - name: Install pip
+      command: python3.6 -m ensurepip

@@ -88,7 +88,7 @@ download_test() {
         "http://mirror.i3d.net/100mb.bin"
         
         "Prague, Czech Republic    Superhosting"
-        "http://speedtest.superhosting.cz/test.php?size=100M"
+        "http://download.superhosting.cz/100mb.bin"
         
         "Prague, Czech republic    10gbps"
         "http://1997754032.rsc.cdn77.org/100mb.bin"

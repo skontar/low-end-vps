@@ -10,4 +10,5 @@
 -A INPUT -p tcp -m tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
 -A INPUT -p tcp -m tcp --dport 25 -m conntrack --ctstate NEW -j ACCEPT
 -A INPUT -p icmp -j ACCEPT
+-A INPUT -p icmpv6 -j ACCEPT
 COMMIT

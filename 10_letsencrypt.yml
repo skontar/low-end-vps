@@ -9,6 +9,20 @@
       yum: 
         name: certbot-nginx
         state: present
+
+    - name: Check local copy of letsencrypt
+      local_action: stat path=letsencrypt/{{ hostname }}
+      become: no
+      register: local_copy
+    - debug:  
+        var: local_copy.stat.exists
+            
+    - name: Restore letsencrypt
+      synchronize:  
+        src=letsencrypt/{{ hostname }}/letsencrypt
+        dest=/etc
+        mode=push
+      when: local_copy.stat.exists == True
             
     - name: Run certbot
       shell: >
@@ -17,10 +31,20 @@
       args:
         creates: /var/log/letsencrypt/letsencrypt.log
       register: certbot_out
+      when: local_copy.stat.exists == False
     - debug:
         var: certbot_out.stdout_lines
+      when: local_copy.stat.exists == False
     - debug: 
         var: certbot_out.stderr_lines
+      when: local_copy.stat.exists == False
+        
+    - name: Backup letsencrypt
+      synchronize:  
+        src=/etc/letsencrypt 
+        dest=letsencrypt/{{ hostname }}
+        mode=pull
+      when: local_copy.stat.exists == False  
 
     - name: Update Diffie-Hellman parameters
       shell: >

@@ -1,3 +1,7 @@
+NetworkManager
+NetworkManager-libnm
+NetworkManager-tui
+acpid
 aic94xx-firmware
 alsa-firmware
 alsa-lib
@@ -67,6 +71,9 @@ libgudev1
 libicu
 libmodman
 libmspack
+libndp
+libnl3
+libnl3-cli
 libpcap
 libpipeline
 libproxy
@@ -82,6 +89,7 @@ make
 man-db
 mariadb-libs
 microcode_ctl
+mozjs17
 nettle
 newt
 newt-python
@@ -93,6 +101,8 @@ plymouth
 plymouth-core-libs
 plymouth-scripts
 policycoreutils
+polkit
+polkit-pkla-compat
 postfix
 ppp
 pygobject3-base
@@ -118,5 +128,6 @@ vim-common
 vim-enhanced
 vim-filesystem
 virt-what
+wpa_supplicant
 xfsprogs
 yum-utils
