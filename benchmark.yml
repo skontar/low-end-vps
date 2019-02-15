@@ -9,3 +9,9 @@
       register: benchmark
     - debug:
         var: benchmark.stdout_lines
+    
+    - name: Copy results
+      copy:
+        src: "/home/{{ ansible_user }}/benchmark.log"
+        dest: /srv/Test/data/benchmark.log
+        remote_src: yes

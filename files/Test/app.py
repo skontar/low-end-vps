@@ -92,6 +92,12 @@ def test():
             data += '<br><br>sqlite3: {}'.format(sqlite3.version)
         except ImportError:
             data += '<br><br>sqlite3 not available'     
+            
+        benchmark = os.path.join(os.getcwd(), 'data', 'benchmark.log')
+        if os.path.exists(benchmark):
+            data += '<br><br><pre>'
+            data += open(benchmark).read()
+            data += '</pre>'            
 
         return render_template('values.html', data=data, form=lock_form)
 
